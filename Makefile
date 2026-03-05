@@ -1,19 +1,23 @@
 .PHONY: up down build logs ps clean
 
+# Override if your system uses the legacy docker-compose binary:
+#   make up DC=docker-compose
+DC ?= docker compose
+
 up:
-	docker compose up --build
+	$(DC) up --build
 
 down:
-	docker compose down
+	$(DC) down
 
 build:
-	docker compose build
+	$(DC) build
 
 logs:
-	docker compose logs -f --tail=200
+	$(DC) logs -f --tail=200
 
 ps:
-	docker compose ps
+	$(DC) ps
 
 clean:
-	docker compose down -v --remove-orphans
+	$(DC) down -v --remove-orphans
