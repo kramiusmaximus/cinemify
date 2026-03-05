@@ -7,6 +7,8 @@ RUN npm install --no-audit --progress=false
 
 FROM node:22-alpine AS build
 WORKDIR /app
+# package.json is needed for `npm run build`
+COPY package.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY tsconfig.json ./
 COPY openapi.yaml ./
