@@ -44,6 +44,15 @@
 
 ## 2) Product architecture (MVP)
 
+### Repo structure (split frontend/backend)
+- `frontend/` — web UI (2000s vibe, intentionally not “Vercel template”)
+- `backend/` — API service (job orchestration + segmentation + provider adapter)
+- `docs/` — planning + API contract
+
+### API contract (Swagger / OpenAPI)
+- Maintain an **OpenAPI (Swagger) document** as the contract between frontend and backend.
+- Backend should serve Swagger UI from that document.
+
 ### Long-form (up to 1h) render strategy
 Because frontier v2v endpoints usually cap duration and/or have practical upload limits, we treat a 1h upload as a **batch of short segments**.
 
@@ -73,12 +82,28 @@ Runway v2v resolution note:
 - Upload widget + preset picker + job status UI
 
 ### Backend
-- Next.js API routes (or separate Node service) for:
-  - Auth
-  - Upload signing
-  - Job creation
-  - Provider submission
-  - Polling/webhook handling
+- Separate backend service (not coupled to the frontend) responsible for:
+  - Auth (later)
+  - Upload signing / asset registration (later; start with mocks)
+  - Job creation + status
+  - Segmentation planning (≤160MB/segment)
+  - Provider submission + polling
+  - Stitch orchestration (later)
+
+#### Integration strategy (abstract + mock first)
+For MVP implementation order, we **abstract away** and **mock** these integrations initially:
+- Runway (video-to-video tasks)
+- Storage (S3/R2; presigned URLs; downloading provider outputs)
+- Payments (Stripe subscriptions + credit ledger)
+
+Define small interfaces (ports) like `RunwayClient`, `StorageClient`, `PaymentsClient` and provide:
+- `mock/*` implementations for local dev
+- `real/*` implementations as TODO
+
+#### Email (TODO)
+- Use a 3rd-party email service (Resend/Postmark/etc.).
+- Do **not** run our own SMTP server.
+- Implement interface + mock now; real provider integration later.
 
 ### Storage
 - S3-compatible (AWS S3 / Cloudflare R2)
