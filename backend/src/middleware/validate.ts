@@ -1,7 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import type { AnyZodObject, ZodError } from "zod";
+import type { ZodError, ZodTypeAny } from "zod";
 
-export function validateBody(schema: AnyZodObject) {
+// Accept any Zod schema (including ZodEffects/ZodDefault), not just plain objects.
+export function validateBody(schema: ZodTypeAny) {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
     if (!result.success) {
