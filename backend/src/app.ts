@@ -10,6 +10,9 @@ import { MockRunwayClient } from "./integrations/mock/runway-client.js";
 import { MockStorageClient } from "./integrations/mock/storage-client.js";
 import { MockPaymentsClient } from "./integrations/mock/payments-client.js";
 import { MockEmailClient } from "./integrations/mock/email-client.js";
+import { createDbPool, getDbConfigFromEnv } from "./db/mysql.js";
+import { UsersRepo } from "./db/users-repo.js";
+import { hashPassword } from "./auth/password.js";
 
 export async function createApp() {
   const app = express();
@@ -17,6 +20,17 @@ export async function createApp() {
   const openApiPath = path.resolve(backendRoot, "openapi.yaml");
   const rawOpenApi = await readFile(openApiPath, "utf-8");
   const openApiDocument = YAML.parse(rawOpenApi);
+
+  const pool = createDbPool(getDbConfigFromEnv());
+  const usersRepo = new UsersRepo(pool);
+  await usersRepo.ensureUsersTable();
+
+  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@cinemify.local";
+  const adminPassword = process.env.ADMIN_PASSWORD ?? "admin12345";
+  await usersRepo.ensureAdmin({
+    email: adminEmail,
+    passwordHash: await hashPassword(adminPassword),
+  });
 
   const store = new InMemoryStore();
   const runwayClient = new MockRunwayClient();
@@ -52,6 +66,7 @@ export async function createApp() {
   app.use(
     createApiRouter({
       store,
+      usersRepo,
       runwayClient,
       storageClient,
       paymentsClient,

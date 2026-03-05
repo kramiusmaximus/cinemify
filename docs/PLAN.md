@@ -1,139 +1,80 @@
 # Plan
 
-## 1) Model + inference decision (first)
-### What we need
-- **Video-to-video** transformation (input clip → output clip)
-- Accept **reference image** and/or prompt to steer the final look
-- Good temporal consistency (avoid frame flicker)
-- Production-ready API (auth, pricing, rate limits, job status)
+## Current Reality Snapshot (March 5, 2026)
+- **Repo split is in place**:
+  - `frontend/` static retro UI (HTML/CSS/JS)
+  - `backend/` Express + TypeScript API
+  - `docs/` planning + contracts
+  - `db/` SQL init scripts for local MySQL
+- **OpenAPI contract exists and is served** by backend:
+  - Source: `backend/openapi.yaml`
+  - Served at `GET /openapi.yaml`
+  - Swagger UI at `GET /docs`
+- **Dockerized local development exists** via root `docker-compose.yml`:
+  - `frontend` (nginx)
+  - `backend` (node)
+  - `mysql` (persistent named volume + init SQL)
+  - `adminer` for DB inspection
+- **Integrations are still mocked** for now:
+  - Runway
+  - Storage
+  - Payments
+  - Email
 
-### Shortlist (2026-ish reality check)
-1) **Runway (Gen-3 video-to-video / stylization)**
-   - Pros: strong quality, productized, designed for v2v, supports reference-driven looks (depending on endpoint)
-   - Cons: cost; stricter content policy; vendor lock-in
-   - Inference: Runway hosted (async jobs)
+## MVP Checklist
+- [x] Repo structure split into `frontend/` and `backend/`
+- [x] Docker Compose for local stack
+- [x] MySQL service + named volume + DB init SQL
+- [x] User auth endpoints with JWT (`/v1/auth/register`, `/v1/auth/login`, `/v1/auth/me`)
+- [x] Backend auth middleware for bearer token parsing and protected job routes
+- [x] Admin bootstrap user on backend startup (`ADMIN_EMAIL`, `ADMIN_PASSWORD`)
+- [x] Job orchestration and events in-memory for MVP
+- [x] Segmentation planning endpoint in backend
+- [x] Mock integration interfaces and mock providers wired
+- [ ] Runway real integration TODO
+- [ ] Storage real integration TODO (S3/R2 + presigned uploads)
+- [ ] Payments real integration TODO (Stripe subscription + credits ledger)
+- [ ] Email real integration TODO (transactional provider)
+- [ ] Observability TODO (structured logs, traces, metrics, alerts)
 
-2) **Luma Dream Machine**
-   - Pros: strong image/text-to-video; generally good motion
-   - Cons: v2v/stylize capabilities can be limited compared to Runway; API surface may vary
-   - Inference: Luma hosted (async jobs)
+## Backend Architecture (MVP)
+- API: Express + TypeScript
+- Contract: OpenAPI-first (`backend/openapi.yaml`)
+- Auth: email/password + JWT bearer auth
+- User management: **MySQL** `users` table
+- Jobs: in-memory store (temporary until DB-backed jobs are implemented)
 
-3) **Stability/open-source stack (AnimateDiff / SVD / CogVideoX + temporal tricks)**
-   - Pros: control + potentially cheaper at scale
-   - Cons: harder to reach “frontier” quality; significant eng effort for temporal stability; GPU ops
-   - Inference: self-host (Modal/RunPod/K8s) or Replicate
+## Database (MySQL)
+`users` schema used by backend auth:
+- `id` (PK, auto increment)
+- `email` (unique)
+- `password_hash`
+- `role` (`admin` | `user`)
+- `created_at`
 
-### Recommendation for MVP
-- **Start with Runway as the primary provider** (best match to “upload clip → transform style/realism”).
-- Design the backend with a **provider abstraction** so we can add Luma / others later.
+Local dev defaults in compose (must be changed outside local dev):
+- `MYSQL_DATABASE=cinemify`
+- `MYSQL_USER=cinemify`
+- `MYSQL_PASSWORD=cinemify_password`
+- `MYSQL_ROOT_PASSWORD=root_password`
 
-### Confirmed requirements (Mark)
-- **Provider:** Runway (hosted async inference)
-- **Input length:** up to **1 hour** per upload (we’ll splice to provider limits)
-- **Output resolution:** **user-selectable** (we’ll offer discrete presets based on provider support; optional post-upscale)
-- **Latency tolerance:** up to **~1 hour** is acceptable
-- **Monetization:** **subscription + monthly credits**
+## Auth Notes
+- Register: `POST /v1/auth/register`
+- Login: `POST /v1/auth/login` returns JWT
+- Current user: `GET /v1/auth/me` with `Authorization: Bearer <token>`
+- Server startup ensures default admin user exists from env vars:
+  - `ADMIN_EMAIL` (default `admin@cinemify.local`)
+  - `ADMIN_PASSWORD` (default `admin12345`)
 
-### Confirmed UX decisions
-- **Audio:** preserve original audio by default (copy input audio onto final stitched render).
-- **Subtitles:** keep as-is (we’ll avoid touching subtitle tracks; if provider output drops them, we’ll remux from source when possible).
-- **Reference:** allow both **preset looks** and **user-uploaded reference images**.
+## Long-form Render Strategy (still planned)
+1. Ingest upload and register job
+2. Normalize/transcode for stable processing
+3. Segment under provider limits (currently size-based planning)
+4. Render fan-out through provider adapter
+5. Stitch outputs + preserve original audio
+6. Deliver final asset + status updates
 
-### Still open
-- Content boundaries / moderation requirements (we should align with Runway policy + implement basic guardrails).
-
-## 2) Product architecture (MVP)
-
-### Repo structure (split frontend/backend)
-- `frontend/` — web UI (2000s vibe, intentionally not “Vercel template”)
-- `backend/` — API service (job orchestration + segmentation + provider adapter)
-- `docs/` — planning + API contract
-
-### API contract (Swagger / OpenAPI)
-- Maintain an **OpenAPI (Swagger) document** as the contract between frontend and backend.
-- Backend should serve Swagger UI from that document.
-
-### Long-form (up to 1h) render strategy
-Because frontier v2v endpoints usually cap duration and/or have practical upload limits, we treat a 1h upload as a **batch of short segments**.
-
-Pipeline (high level):
-1. **Ingest**: upload original → store in S3/R2 → create `job` record.
-2. **Normalize**: transcode to a known format (e.g., H.264 + AAC), extract fps/resolution, generate a proxy.
-3. **Segment** (choose one):
-   - **Fixed chunks by size budget** (MVP): target **≤160MB** per segment (80% of Runway’s 200MB ephemeral upload max) so we stay under the limit.
-     - We’ll pick duration dynamically based on the normalized encode bitrate (e.g., with ffprobe).
-   - **Scene/shot detection** (upgrade): cut on shots (PySceneDetect / ffmpeg filters) while still enforcing the ≤160MB cap; better continuity at boundaries.
-   - **User-provided segments** (option): let users upload a folder/zip of pre-split segments, then we only run render+stitch.
-4. **Render fan-out**: submit each segment to Runway with the same style preset (and optional prompt).
-   - If the provider supports it, we can try **boundary conditioning** (e.g., feed last frame of previous segment as an init/reference) to reduce flicker.
-5. **Stitch**: concatenate outputs; handle overlaps with crossfades if needed.
-6. **Audio**: by default, **copy original audio** onto final video (unless you want silent output).
-7. **Deliver**: final asset + optional per-segment previews; mark job complete.
-
-Credits accounting:
-- Runway’s API pricing is **credits per second** by model (no resolution multiplier is mentioned in their pricing table), but we may still want internal multipliers for product simplicity.
-- Charge credits on **rendered seconds × model multiplier** (and optionally resolution/quality multipliers if we choose to).
-
-Runway v2v resolution note:
-- For `gen4_aleph` video-to-video, the OpenAPI schema marks `ratio` as **deprecated/ignored** and says output resolution is determined by the **input video**. Practically: to offer “output resolution” we either (a) **scale the input segments** to the target res before sending, or (b) render then post-upscale.
-
-### Frontend
-- Next.js (single-page UX)
-- Upload widget + preset picker + job status UI
-
-### Backend
-- Separate backend service (not coupled to the frontend) responsible for:
-  - Auth (later)
-  - Upload signing / asset registration (later; start with mocks)
-  - Job creation + status
-  - Segmentation planning (≤160MB/segment)
-  - Provider submission + polling
-  - Stitch orchestration (later)
-
-#### Integration strategy (abstract + mock first)
-For MVP implementation order, we **abstract away** and **mock** these integrations initially:
-- Runway (video-to-video tasks)
-- Storage (S3/R2; presigned URLs; downloading provider outputs)
-- Payments (Stripe subscriptions + credit ledger)
-
-Define small interfaces (ports) like `RunwayClient`, `StorageClient`, `PaymentsClient` and provide:
-- `mock/*` implementations for local dev
-- `real/*` implementations as TODO
-
-#### Email (TODO)
-- Use a 3rd-party email service (Resend/Postmark/etc.).
-- Do **not** run our own SMTP server.
-- Implement interface + mock now; real provider integration later.
-
-### Storage
-- S3-compatible (AWS S3 / Cloudflare R2)
-  - Store input video + reference image
-  - Store output video + thumbnails
-
-### DB
-- Postgres (Supabase or managed Postgres)
-  - users
-  - jobs (status, provider job id, urls)
-  - credits/transactions
-
-### Auth
-- Supabase Auth or Clerk (fastest path)
-
-### Payments
-- Stripe (subscriptions) + webhooks
-- Monthly credit balance
-- Credits-based usage (rendered seconds × multipliers → credits)
-
-### Email
-- Resend/Postmark for transactional (login, receipts, job-complete)
-- Newsletter: keep separate (Mailchimp/Beehiiv) or basic list via Resend
-
-## 3) Build sequence (after decision)
-1. Scaffold Next.js app + UI skeleton
-2. Auth + user model
-3. Upload to storage (signed URLs)
-4. Render job pipeline (queue + provider API)
-5. Job status + results page
-6. Stripe credits + enforcement
-7. Email notifications
-8. Basic admin + observability
+## Open Items
+- Persist jobs/segments/events in MySQL instead of in-memory
+- Move mock providers to real providers incrementally (Runway, storage, payments, email)
+- Add production-grade observability and operations tooling

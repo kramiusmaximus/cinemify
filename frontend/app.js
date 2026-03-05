@@ -1,4 +1,5 @@
 const DEFAULT_API_BASE = 'http://localhost:3001';
+const TOKEN_STORAGE_KEY = 'cinemify_jwt';
 
 export function getApiBase() {
   return localStorage.getItem('cinemify_api_base') || DEFAULT_API_BASE;
@@ -6,6 +7,47 @@ export function getApiBase() {
 
 export function setApiBase(baseUrl) {
   localStorage.setItem('cinemify_api_base', baseUrl.trim() || DEFAULT_API_BASE);
+}
+
+export function getAuthToken() {
+  return localStorage.getItem(TOKEN_STORAGE_KEY) || '';
+}
+
+export function setAuthToken(token) {
+  if (token) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    return;
+  }
+
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+export function clearAuthToken() {
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+export function setupAuthNav(logoutButtonId = 'logoutButton', authStatusId = 'authStatus') {
+  const logoutButton = document.getElementById(logoutButtonId);
+  const authStatus = document.getElementById(authStatusId);
+  const token = getAuthToken();
+
+  if (authStatus) {
+    authStatus.textContent = token ? 'Logged in' : 'Guest mode';
+  }
+
+  if (!logoutButton) {
+    return;
+  }
+
+  if (!token) {
+    logoutButton.disabled = true;
+    logoutButton.title = 'No active session';
+  }
+
+  logoutButton.addEventListener('click', () => {
+    clearAuthToken();
+    window.location.href = './login.html';
+  });
 }
 
 export function setupBaseUrlInput(inputId, buttonId, messageId) {
@@ -29,8 +71,10 @@ export function setupBaseUrlInput(inputId, buttonId, messageId) {
 
 export async function apiRequest(path, options = {}) {
   const url = `${getApiBase()}${path}`;
+  const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
 

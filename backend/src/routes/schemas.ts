@@ -27,6 +27,19 @@ export const planSegmentsSchema = z
     }
   });
 
-export const startJobSchema = z.object({
-  notifyEmail: z.string().email().optional(),
-}).default({});
+export const startJobSchema = z
+  .object({
+    notifyEmail: z.string().email().optional(),
+  })
+  // allow empty or missing JSON body
+  .default({});
+
+export const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(128),
+});
+
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Cinemify</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <header class="header">
+        <h1>Login</h1>
+      </header>
+
+      <table class="nav" role="presentation">
+        <tr>
+          <td><a href="./index.html">Home</a></td>
+          <td><a href="./create-job.html">Create Job</a></td>
+          <td><a href="./jobs.html">Jobs List</a></td>
+          <td><a href="./job.html">Job Detail</a></td>
+          <td><a href="./login.html">Login</a></td>
+          <td><button id="logoutButton" class="fixed">Logout</button></td>
+          <td><span id="authStatus">Guest mode</span></td>
+        </tr>
+      </table>
+
+      <main class="content">
+        <section class="panel">
+          <h2 class="panel-title">POST /v1/auth/login</h2>
+          <div class="panel-body">
+            <form id="loginForm">
+              <table class="form-table">
+                <tr>
+                  <th><label for="email">Email</label></th>
+                  <td><input id="email" name="email" type="email" required /></td>
+                </tr>
+                <tr>
+                  <th><label for="password">Password</label></th>
+                  <td><input id="password" name="password" type="password" required /></td>
+                </tr>
+              </table>
+
+              <p>
+                <button type="submit">Login</button>
+              </p>
+            </form>
+
+            <p>
+              Default dev admin: <code>admin@cinemify.local</code> / <code>admin12345</code>
+            </p>
+
+            <div id="loginMessage" class="status-box" style="display:none"></div>
+            <h3>Session</h3>
+            <pre id="loginResult">Not authenticated.</pre>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">Use this page to create a local auth session for job operations.</footer>
+    </div>
+
+    <script type="module" src="./login.js"></script>
+  </body>
+</html>

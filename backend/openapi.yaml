@@ -1,14 +1,17 @@
 openapi: 3.1.0
 info:
   title: Cinemify Backend API
-  version: 0.1.0
-  description: API for creating video transformation jobs, planning segments, and polling events.
+  version: 0.2.0
+  description: API for authentication and creating video transformation jobs.
 servers:
   - url: http://localhost:8080
+security:
+  - bearerAuth: []
 paths:
   /health:
     get:
       summary: Health check
+      security: []
       responses:
         '200':
           description: Service healthy
@@ -23,6 +26,7 @@ paths:
   /openapi.yaml:
     get:
       summary: OpenAPI source document
+      security: []
       responses:
         '200':
           description: OpenAPI YAML
@@ -30,6 +34,78 @@ paths:
             application/yaml:
               schema:
                 type: string
+  /v1/auth/register:
+    post:
+      summary: Register a user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                required: [user]
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/auth/login:
+    post:
+      summary: Login with email/password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Auth token + user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+                required: [token, user]
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/auth/me:
+    get:
+      summary: Get current user
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                required: [user]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /v1/jobs:
     post:
       summary: Create a new job
@@ -48,6 +124,8 @@ paths:
                 $ref: '#/components/schemas/Job'
         '400':
           $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     get:
       summary: List jobs
       responses:
@@ -63,6 +141,8 @@ paths:
                     items:
                       $ref: '#/components/schemas/Job'
                 required: [items]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /v1/jobs/{jobId}:
     get:
       summary: Get a job with segments
@@ -87,6 +167,8 @@ paths:
                     items:
                       $ref: '#/components/schemas/Segment'
                 required: [job, segments]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
   /v1/jobs/{jobId}/plan-segments:
@@ -113,6 +195,8 @@ paths:
                 $ref: '#/components/schemas/PlanSegmentsResponse'
         '400':
           $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
   /v1/jobs/{jobId}/start:
@@ -151,6 +235,8 @@ paths:
                 required: [ok, jobId, status, outputUrl]
         '400':
           $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '402':
           description: Credits required
           content:
@@ -187,12 +273,25 @@ paths:
                     items:
                       $ref: '#/components/schemas/JobEvent'
                 required: [items]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   responses:
     NotFound:
       description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required or invalid token
       content:
         application/json:
           schema:
@@ -217,6 +316,41 @@ components:
                           type: string
                       required: [path, message]
   schemas:
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+      required: [email, password]
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, user]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, email, role]
     CreateJobRequest:
       type: object
       properties:
