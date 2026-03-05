@@ -1,11 +1,50 @@
 services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: cinemify
+      MYSQL_USER: cinemify
+      MYSQL_PASSWORD: cinemify_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  adminer:
+    image: adminer:4
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mysql
+
   backend:
     build:
       context: ./backend
     ports:
       - "3001:8080"
     environment:
-      - PORT=8080
+      PORT: 8080
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: cinemify
+      MYSQL_USER: cinemify
+      MYSQL_PASSWORD: cinemify_password
+      JWT_SECRET: dev_jwt_secret_change_me
+      ADMIN_EMAIL: admin@cinemify.local
+      ADMIN_PASSWORD: admin12345
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   frontend:
     build:
@@ -14,3 +53,6 @@ services:
       - "5173:80"
     depends_on:
       - backend
+
+volumes:
+  mysql_data:

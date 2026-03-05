@@ -76,6 +76,16 @@ a:hover {
   font-weight: bold;
 }
 
+.nav button {
+  margin: 0;
+  padding: 4px 8px;
+}
+
+#authStatus {
+  font-size: 12px;
+  color: #2f4f77;
+}
+
 .content {
   padding: 14px;
 }

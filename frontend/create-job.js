@@ -1,8 +1,9 @@
-import { apiRequest, pretty, getJobId, showMessage } from './app.js';
+import { apiRequest, pretty, getJobId, setupAuthNav, showMessage } from './app.js';
 
 const form = document.getElementById('createJobForm');
 const message = document.getElementById('createMessage');
 const result = document.getElementById('createResult');
+setupAuthNav();
 
 function parseExtraJson(rawText) {
   if (!rawText.trim()) {
@@ -29,7 +30,7 @@ form.addEventListener('submit', async (event) => {
       stylePreset: String(formData.get('stylePreset') || '').trim() || undefined,
       prompt: String(formData.get('prompt') || '').trim() || undefined,
       referenceImageUrl: String(formData.get('referenceImageUrl') || '').trim() || undefined,
-      targetResolution: String(formData.get('targetResolution') || '').trim() || undefined,
+      outputResolution: String(formData.get('targetResolution') || '').trim() || undefined,
       ...extraJson,
     };
 
@@ -53,9 +54,12 @@ form.addEventListener('submit', async (event) => {
       showMessage(message, 'Job created, but no explicit jobId field was found in the response.');
     }
   } catch (error) {
+    const friendlyMessage = error.status === 401
+      ? 'Please log in first from the Login page, then try creating the job again.'
+      : `Create failed: ${error.message}`;
     const details = error.data ? `\n${pretty(error.data)}` : '';
     result.textContent = `Error: ${error.message}${details}`;
     message.style.display = 'block';
-    showMessage(message, `Create failed: ${error.message}`, true);
+    showMessage(message, friendlyMessage, true);
   }
 });

@@ -3,6 +3,7 @@ import {
   getQueryParam,
   setQueryParam,
   setJsonResult,
+  setupAuthNav,
   showMessage,
 } from './app.js';
 
@@ -13,6 +14,7 @@ const startBtn = document.getElementById('startJob');
 const pollToggle = document.getElementById('pollToggle');
 const message = document.getElementById('jobMessage');
 const output = document.getElementById('jobResult');
+setupAuthNav();
 
 let pollTimer = null;
 
@@ -48,7 +50,10 @@ async function planSegments() {
 
   const response = await apiRequest(`/v1/jobs/${encodeURIComponent(jobId)}/plan-segments`, {
     method: 'POST',
-    body: JSON.stringify({}),
+    body: JSON.stringify({
+      durationSeconds: 60,
+      bitrateMbps: 8,
+    }),
   });
 
   setJsonResult(output, response);
@@ -74,7 +79,10 @@ async function handleAction(action) {
   try {
     await action();
   } catch (error) {
-    showMessage(message, `Request failed: ${error.message}`, true);
+    const friendlyMessage = error.status === 401
+      ? 'Please log in from the Login page to manage this job.'
+      : `Request failed: ${error.message}`;
+    showMessage(message, friendlyMessage, true);
     message.style.display = 'block';
   }
 }

@@ -1,8 +1,9 @@
-import { apiRequest, extractJobs, getJobId, getJobStatus, showMessage } from './app.js';
+import { apiRequest, extractJobs, getJobId, getJobStatus, setupAuthNav, showMessage } from './app.js';
 
 const refreshButton = document.getElementById('refreshJobs');
 const tableBody = document.querySelector('#jobsTable tbody');
 const message = document.getElementById('jobsMessage');
+setupAuthNav();
 
 function clearRows() {
   tableBody.innerHTML = '';
@@ -67,7 +68,10 @@ async function loadJobs() {
     clearRows();
     appendEmptyRow(`Failed to load jobs: ${error.message}`);
     message.style.display = 'block';
-    showMessage(message, `Load failed: ${error.message}`, true);
+    const friendlyMessage = error.status === 401
+      ? 'Please log in from the Login page to view jobs.'
+      : `Load failed: ${error.message}`;
+    showMessage(message, friendlyMessage, true);
   }
 }
 
