@@ -40,7 +40,7 @@
 - **Reference:** allow both **preset looks** and **user-uploaded reference images**.
 
 ### Still open
-- Content boundaries / moderation requirements?
+- Content boundaries / moderation requirements (we should align with Runway policy + implement basic guardrails).
 
 ## 2) Product architecture (MVP)
 
