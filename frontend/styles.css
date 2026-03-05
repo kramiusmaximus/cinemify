@@ -1,0 +1,234 @@
+:root {
+  --page-bg-top: #9fbad4;
+  --page-bg-bottom: #d9e6f3;
+  --panel-bg: #f0f4f9;
+  --panel-border-dark: #6f86a3;
+  --panel-border-light: #ffffff;
+  --heading-bg-top: #4d73a1;
+  --heading-bg-bottom: #2f4f77;
+  --heading-text: #f8fbff;
+  --text-main: #1f2f44;
+  --text-muted: #4f6077;
+  --button-bg-top: #f8fbff;
+  --button-bg-bottom: #c8d7e8;
+  --button-border-dark: #5d7594;
+  --button-border-light: #ffffff;
+  --ok-bg: #e0f0de;
+  --ok-border: #6f8f67;
+  --error-bg: #f8dede;
+  --error-border: #9f6666;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Tahoma, Verdana, Geneva, sans-serif;
+  color: var(--text-main);
+  background: linear-gradient(to bottom, var(--page-bg-top), var(--page-bg-bottom));
+  min-height: 100vh;
+}
+
+a {
+  color: #0a3f75;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.layout {
+  width: min(980px, 96vw);
+  margin: 20px auto;
+  border: 2px solid var(--panel-border-dark);
+  border-top-color: var(--panel-border-light);
+  border-left-color: var(--panel-border-light);
+  background: var(--panel-bg);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.header {
+  background: linear-gradient(to bottom, var(--heading-bg-top), var(--heading-bg-bottom));
+  color: var(--heading-text);
+  padding: 12px;
+  border-bottom: 2px solid #1c3556;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.5px;
+}
+
+.nav {
+  width: 100%;
+  border-collapse: collapse;
+  background: #d6e2ef;
+}
+
+.nav td {
+  border: 1px solid #9eb3cc;
+  padding: 8px 10px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.content {
+  padding: 14px;
+}
+
+.panel {
+  border: 1px solid #9eb3cc;
+  background: #f8fbff;
+  margin-bottom: 14px;
+}
+
+.panel-title {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 15px;
+  color: #133762;
+  background: linear-gradient(to bottom, #e8f0f9, #d2e0f0);
+  border-bottom: 1px solid #afc3db;
+}
+
+.panel-body {
+  padding: 10px;
+}
+
+table.form-table,
+table.list-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.form-table th,
+table.form-table td,
+table.list-table th,
+table.list-table td {
+  border: 1px solid #b5c8dd;
+  padding: 8px;
+  vertical-align: top;
+}
+
+table.form-table th,
+table.list-table th {
+  background: #e8f0f9;
+  text-align: left;
+  width: 220px;
+}
+
+table.list-table th {
+  width: auto;
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #7b97b8;
+  background: #ffffff;
+}
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+button,
+.button-link {
+  display: inline-block;
+  padding: 6px 10px;
+  margin-right: 6px;
+  border: 1px solid var(--button-border-dark);
+  border-top-color: var(--button-border-light);
+  border-left-color: var(--button-border-light);
+  background: linear-gradient(to bottom, var(--button-bg-top), var(--button-bg-bottom));
+  color: #173e66;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button:active,
+.button-link:active {
+  border-top-color: var(--button-border-dark);
+  border-left-color: var(--button-border-dark);
+  border-right-color: var(--button-border-light);
+  border-bottom-color: var(--button-border-light);
+}
+
+.inline {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.inline > * {
+  flex: 1;
+}
+
+.inline .fixed {
+  flex: 0 0 auto;
+}
+
+.status-box {
+  border: 1px solid var(--ok-border);
+  background: var(--ok-bg);
+  padding: 8px;
+  margin-top: 10px;
+}
+
+.status-box.error {
+  border-color: var(--error-border);
+  background: var(--error-bg);
+}
+
+pre {
+  background: #eef4fb;
+  border: 1px solid #a9bed8;
+  padding: 8px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.footer {
+  border-top: 1px solid #afc3db;
+  background: #e8f0f9;
+  padding: 8px 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 740px) {
+  .layout {
+    width: 98vw;
+    margin: 10px auto;
+  }
+
+  table.form-table th,
+  table.form-table td,
+  table.list-table th,
+  table.list-table td {
+    display: block;
+    width: 100%;
+  }
+
+  table.form-table th,
+  table.list-table th {
+    border-bottom: none;
+  }
+}

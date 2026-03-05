@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Job Detail - Cinemify</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <header class="header">
+        <h1>Job Detail + Status</h1>
+      </header>
+
+      <table class="nav" role="presentation">
+        <tr>
+          <td><a href="./index.html">Home</a></td>
+          <td><a href="./create-job.html">Create Job</a></td>
+          <td><a href="./jobs.html">Jobs List</a></td>
+          <td><a href="./job.html">Job Detail</a></td>
+        </tr>
+      </table>
+
+      <main class="content">
+        <section class="panel">
+          <h2 class="panel-title">Job Controls</h2>
+          <div class="panel-body">
+            <div class="inline">
+              <input id="jobId" type="text" placeholder="Enter jobId" />
+              <button id="loadJob" class="fixed">Load</button>
+              <button id="planSegments" class="fixed">Plan Segments</button>
+              <button id="startJob" class="fixed">Start</button>
+            </div>
+            <p class="inline">
+              <label class="fixed" for="pollToggle">
+                <input id="pollToggle" type="checkbox" /> Poll every 5s
+              </label>
+            </p>
+            <div id="jobMessage" class="status-box" style="display:none"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel-title">GET /v1/jobs/:jobId</h2>
+          <div class="panel-body">
+            <pre id="jobResult">No job loaded.</pre>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">Hint: open this page as <code>job.html?jobId=...</code> for direct linking.</footer>
+    </div>
+
+    <script type="module" src="./job.js"></script>
+  </body>
+</html>

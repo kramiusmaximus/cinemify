@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jobs List - Cinemify</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <header class="header">
+        <h1>Jobs List</h1>
+      </header>
+
+      <table class="nav" role="presentation">
+        <tr>
+          <td><a href="./index.html">Home</a></td>
+          <td><a href="./create-job.html">Create Job</a></td>
+          <td><a href="./jobs.html">Jobs List</a></td>
+          <td><a href="./job.html">Job Detail</a></td>
+        </tr>
+      </table>
+
+      <main class="content">
+        <section class="panel">
+          <h2 class="panel-title">GET /v1/jobs</h2>
+          <div class="panel-body">
+            <p>
+              <button id="refreshJobs">Refresh List</button>
+            </p>
+            <div id="jobsMessage" class="status-box" style="display:none"></div>
+            <table class="list-table" id="jobsTable">
+              <thead>
+                <tr>
+                  <th>Job ID</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5">No jobs loaded.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">Use refresh to sync with backend queue state.</footer>
+    </div>
+
+    <script type="module" src="./jobs.js"></script>
+  </body>
+</html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Job - Cinemify</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <header class="header">
+        <h1>Create Render Job</h1>
+      </header>
+
+      <table class="nav" role="presentation">
+        <tr>
+          <td><a href="./index.html">Home</a></td>
+          <td><a href="./create-job.html">Create Job</a></td>
+          <td><a href="./jobs.html">Jobs List</a></td>
+          <td><a href="./job.html">Job Detail</a></td>
+        </tr>
+      </table>
+
+      <main class="content">
+        <section class="panel">
+          <h2 class="panel-title">POST /v1/jobs</h2>
+          <div class="panel-body">
+            <form id="createJobForm">
+              <table class="form-table">
+                <tr>
+                  <th><label for="inputVideoUrl">Input Video URL *</label></th>
+                  <td><input id="inputVideoUrl" name="inputVideoUrl" required /></td>
+                </tr>
+                <tr>
+                  <th><label for="stylePreset">Style Preset</label></th>
+                  <td><input id="stylePreset" name="stylePreset" placeholder="cinematic-realism" /></td>
+                </tr>
+                <tr>
+                  <th><label for="prompt">Prompt</label></th>
+                  <td><textarea id="prompt" name="prompt" placeholder="Optional prompt to steer look"></textarea></td>
+                </tr>
+                <tr>
+                  <th><label for="referenceImageUrl">Reference Image URL</label></th>
+                  <td><input id="referenceImageUrl" name="referenceImageUrl" /></td>
+                </tr>
+                <tr>
+                  <th><label for="targetResolution">Target Resolution</label></th>
+                  <td>
+                    <select id="targetResolution" name="targetResolution">
+                      <option value="">Provider default</option>
+                      <option value="480p">480p</option>
+                      <option value="720p">720p</option>
+                      <option value="1080p">1080p</option>
+                      <option value="1440p">1440p</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <th><label for="extraJson">Extra JSON fields</label></th>
+                  <td>
+                    <textarea id="extraJson" name="extraJson" placeholder='{"provider":"runway"}'></textarea>
+                  </td>
+                </tr>
+              </table>
+
+              <p>
+                <button type="submit">Create Job</button>
+                <a class="button-link" href="./jobs.html">Go to Jobs List</a>
+              </p>
+            </form>
+
+            <div id="createMessage" class="status-box" style="display:none"></div>
+            <h3>API Response</h3>
+            <pre id="createResult">No response yet.</pre>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">Tip: include `extraJson` if your backend expects additional fields.</footer>
+    </div>
+
+    <script type="module" src="./create-job.js"></script>
+  </body>
+</html>
