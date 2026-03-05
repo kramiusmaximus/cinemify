@@ -1,0 +1,368 @@
+openapi: 3.1.0
+info:
+  title: Cinemify Backend API
+  version: 0.1.0
+  description: API for creating video transformation jobs, planning segments, and polling events.
+servers:
+  - url: http://localhost:8080
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required: [ok]
+  /openapi.yaml:
+    get:
+      summary: OpenAPI source document
+      responses:
+        '200':
+          description: OpenAPI YAML
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /v1/jobs:
+    post:
+      summary: Create a new job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJobRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+    get:
+      summary: List jobs
+      responses:
+        '200':
+          description: Jobs list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Job'
+                required: [items]
+  /v1/jobs/{jobId}:
+    get:
+      summary: Get a job with segments
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job:
+                    $ref: '#/components/schemas/Job'
+                  segments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Segment'
+                required: [job, segments]
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/jobs/{jobId}/plan-segments:
+    post:
+      summary: Plan segments enforcing target size cap
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanSegmentsRequest'
+      responses:
+        '200':
+          description: Planned segments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanSegmentsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/jobs/{jobId}/start:
+    post:
+      summary: Start a planned job
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartJobRequest'
+      responses:
+        '200':
+          description: Started and completed in mock mode
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  jobId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [completed]
+                  outputUrl:
+                    type: string
+                    format: uri
+                required: [ok, jobId, status, outputUrl]
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '402':
+          description: Credits required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Segments missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/jobs/{jobId}/events:
+    get:
+      summary: Poll job events
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/JobEvent'
+                required: [items]
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ErrorResponse'
+              - type: object
+                properties:
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                        message:
+                          type: string
+                      required: [path, message]
+  schemas:
+    CreateJobRequest:
+      type: object
+      properties:
+        inputVideoUrl:
+          type: string
+          format: uri
+        prompt:
+          type: string
+          maxLength: 1000
+        referenceImageUrl:
+          type: string
+          format: uri
+        outputResolution:
+          type: string
+          enum: [720p, 1080p, 1440p, 4k]
+      required: [inputVideoUrl]
+    PlanSegmentsRequest:
+      type: object
+      description: Provide either bitrateMbps OR sizeBytes with durationSeconds.
+      properties:
+        durationSeconds:
+          type: number
+          exclusiveMinimum: 0
+        targetSegmentMaxMb:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 160
+          default: 160
+        bitrateMbps:
+          type: number
+          exclusiveMinimum: 0
+        sizeBytes:
+          type: integer
+          minimum: 1
+      required: [durationSeconds]
+    StartJobRequest:
+      type: object
+      properties:
+        notifyEmail:
+          type: string
+          format: email
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+        inputVideoUrl:
+          type: string
+          format: uri
+        prompt:
+          type: string
+        referenceImageUrl:
+          type: string
+          format: uri
+        outputResolution:
+          type: string
+          enum: [720p, 1080p, 1440p, 4k]
+        status:
+          type: string
+          enum: [created, planned, running, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        segmentCount:
+          type: integer
+          minimum: 0
+        outputUrl:
+          type: string
+          format: uri
+      required: [id, inputVideoUrl, status, createdAt, updatedAt, segmentCount]
+    Segment:
+      type: object
+      properties:
+        id:
+          type: string
+        jobId:
+          type: string
+        index:
+          type: integer
+          minimum: 0
+        startSeconds:
+          type: number
+          minimum: 0
+        endSeconds:
+          type: number
+          minimum: 0
+        estimatedSizeBytes:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [pending, submitted, completed, failed]
+        providerTaskId:
+          type: string
+        outputUrl:
+          type: string
+          format: uri
+      required: [id, jobId, index, startSeconds, endSeconds, estimatedSizeBytes, status]
+    PlanSegmentsResponse:
+      type: object
+      properties:
+        estimatedBitrateMbps:
+          type: number
+        targetSegmentMaxBytes:
+          type: integer
+        maxSegmentDurationSeconds:
+          type: number
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Segment'
+      required: [estimatedBitrateMbps, targetSegmentMaxBytes, maxSegmentDurationSeconds, segments]
+    JobEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        jobId:
+          type: string
+        type:
+          type: string
+          enum:
+            - job.created
+            - segments.planned
+            - job.started
+            - segment.submitted
+            - segment.completed
+            - job.completed
+            - job.failed
+        timestamp:
+          type: string
+          format: date-time
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+      required: [id, jobId, type, timestamp, message]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required: [error, message]
